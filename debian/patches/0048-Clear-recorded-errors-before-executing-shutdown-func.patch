@@ -1,0 +1,461 @@
+From f20e11cbe12057bddade6ff9a2ff9ea1bb6084c9 Mon Sep 17 00:00:00 2001
+From: Arnaud Le Blanc <arnaud.lb@gmail.com>
+Date: Sun, 3 Apr 2022 13:16:33 +0200
+Subject: [PATCH] Clear recorded errors before executing shutdown functions
+
+Recorded errors may be attached to the wrong cached script when a fatal error
+occurs during recording. This happens because the fatal error will cause a
+bailout, which may prevent the recorded errors from being freed. If an other
+script is compiled after bailout, or if a class is linked after bailout, the
+recorded errors will be attached to it.
+
+This change fixes this by freeing recorded errors before executing shutdown
+functions.
+
+Fixes GH-8063
+
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/php8.1/+bug/1983205
+Origin: https://github.com/php/php-src/commit/f20e11cbe12057bddade6ff9a2ff9ea1bb6084c9
+Last-Update: 2022-08-08
+---
+ Zend/zend_inheritance.c                | 207 ++++++++++++++-----------
+ ext/opcache/tests/gh8063-001.phpt      |  31 ++++
+ ext/opcache/tests/gh8063-002.phpt      |  31 ++++
+ ext/opcache/tests/gh8063-003.phpt      |  30 ++++
+ ext/opcache/tests/gh8063/BadClass.inc  |   8 +
+ ext/opcache/tests/gh8063/BadClass2.inc |  15 ++
+ ext/opcache/tests/gh8063/Bar.inc       |   3 +
+ ext/opcache/tests/gh8063/Baz.inc       |   3 +
+ ext/opcache/tests/gh8063/Foo.inc       |   8 +
+ 9 files changed, 242 insertions(+), 94 deletions(-)
+ create mode 100644 ext/opcache/tests/gh8063-001.phpt
+ create mode 100644 ext/opcache/tests/gh8063-002.phpt
+ create mode 100644 ext/opcache/tests/gh8063-003.phpt
+ create mode 100644 ext/opcache/tests/gh8063/BadClass.inc
+ create mode 100644 ext/opcache/tests/gh8063/BadClass2.inc
+ create mode 100644 ext/opcache/tests/gh8063/Bar.inc
+ create mode 100644 ext/opcache/tests/gh8063/Baz.inc
+ create mode 100644 ext/opcache/tests/gh8063/Foo.inc
+
+diff --git a/Zend/zend_inheritance.c b/Zend/zend_inheritance.c
+index 020c5e6553..45b284d023 100644
+--- a/Zend/zend_inheritance.c
++++ b/Zend/zend_inheritance.c
+@@ -2775,101 +2775,113 @@ ZEND_API zend_class_entry *zend_do_link_class(zend_class_entry *ce, zend_string
+ #endif
+ 
+ 	bool orig_record_errors = EG(record_errors);
+-	if (ce->ce_flags & ZEND_ACC_IMMUTABLE) {
+-		if (is_cacheable) {
+-			if (zend_inheritance_cache_get && zend_inheritance_cache_add) {
+-				zend_class_entry *ret = zend_inheritance_cache_get(ce, parent, traits_and_interfaces);
+-				if (ret) {
+-					if (traits_and_interfaces) {
+-						free_alloca(traits_and_interfaces, use_heap);
+-					}
+-					zv = zend_hash_find_known_hash(CG(class_table), key);
+-					Z_CE_P(zv) = ret;
+-					return ret;
+-				}
+ 
+-				/* Make sure warnings (such as deprecations) thrown during inheritance
+-				 * will be recoreded in the inheritance cache. */
+-				zend_begin_record_errors();
+-			} else {
+-				is_cacheable = 0;
++	if (ce->ce_flags & ZEND_ACC_IMMUTABLE && is_cacheable) {
++		if (zend_inheritance_cache_get && zend_inheritance_cache_add) {
++			zend_class_entry *ret = zend_inheritance_cache_get(ce, parent, traits_and_interfaces);
++			if (ret) {
++				if (traits_and_interfaces) {
++					free_alloca(traits_and_interfaces, use_heap);
++				}
++				zv = zend_hash_find_known_hash(CG(class_table), key);
++				Z_CE_P(zv) = ret;
++				return ret;
+ 			}
+-			proto = ce;
++
++			/* Make sure warnings (such as deprecations) thrown during inheritance
++			 * will be recorded in the inheritance cache. */
++			zend_begin_record_errors();
++		} else {
++			is_cacheable = 0;
+ 		}
+-		/* Lazy class loading */
+-		ce = zend_lazy_class_load(ce);
+-		zv = zend_hash_find_known_hash(CG(class_table), key);
+-		Z_CE_P(zv) = ce;
+-	} else if (ce->ce_flags & ZEND_ACC_FILE_CACHED) {
+-		/* Lazy class loading */
+-		ce = zend_lazy_class_load(ce);
+-		ce->ce_flags &= ~ZEND_ACC_FILE_CACHED;
+-		zv = zend_hash_find_known_hash(CG(class_table), key);
+-		Z_CE_P(zv) = ce;
++		proto = ce;
+ 	}
+ 
+-	if (CG(unlinked_uses)) {
+-		zend_hash_index_del(CG(unlinked_uses), (zend_long)(zend_uintptr_t) ce);
+-	}
++	zend_try {
++		if (ce->ce_flags & ZEND_ACC_IMMUTABLE) {
++			/* Lazy class loading */
++			ce = zend_lazy_class_load(ce);
++			zv = zend_hash_find_known_hash(CG(class_table), key);
++			Z_CE_P(zv) = ce;
++		} else if (ce->ce_flags & ZEND_ACC_FILE_CACHED) {
++			/* Lazy class loading */
++			ce = zend_lazy_class_load(ce);
++			ce->ce_flags &= ~ZEND_ACC_FILE_CACHED;
++			zv = zend_hash_find_known_hash(CG(class_table), key);
++			Z_CE_P(zv) = ce;
++		}
+ 
+-	orig_linking_class = CG(current_linking_class);
+-	CG(current_linking_class) = is_cacheable ? ce : NULL;
++		if (CG(unlinked_uses)) {
++			zend_hash_index_del(CG(unlinked_uses), (zend_long)(zend_uintptr_t) ce);
++		}
+ 
+-	if (ce->ce_flags & ZEND_ACC_ENUM) {
+-		/* Only register builtin enum methods during inheritance to avoid persisting them in
+-		 * opcache. */
+-		zend_enum_register_funcs(ce);
+-	}
++		orig_linking_class = CG(current_linking_class);
++		CG(current_linking_class) = is_cacheable ? ce : NULL;
+ 
+-	if (parent) {
+-		if (!(parent->ce_flags & ZEND_ACC_LINKED)) {
+-			add_dependency_obligation(ce, parent);
++		if (ce->ce_flags & ZEND_ACC_ENUM) {
++			/* Only register builtin enum methods during inheritance to avoid persisting them in
++			 * opcache. */
++			zend_enum_register_funcs(ce);
+ 		}
+-		zend_do_inheritance(ce, parent);
+-	}
+-	if (ce->num_traits) {
+-		zend_do_bind_traits(ce, traits_and_interfaces);
+-	}
+-	if (ce->num_interfaces) {
+-		/* Also copy the parent interfaces here, so we don't need to reallocate later. */
+-		uint32_t num_parent_interfaces = parent ? parent->num_interfaces : 0;
+-		zend_class_entry **interfaces = emalloc(
+-			sizeof(zend_class_entry *) * (ce->num_interfaces + num_parent_interfaces));
+ 
+-		if (num_parent_interfaces) {
+-			memcpy(interfaces, parent->interfaces,
+-				sizeof(zend_class_entry *) * num_parent_interfaces);
++		if (parent) {
++			if (!(parent->ce_flags & ZEND_ACC_LINKED)) {
++				add_dependency_obligation(ce, parent);
++			}
++			zend_do_inheritance(ce, parent);
++		}
++		if (ce->num_traits) {
++			zend_do_bind_traits(ce, traits_and_interfaces);
+ 		}
+-		memcpy(interfaces + num_parent_interfaces, traits_and_interfaces + ce->num_traits,
+-				sizeof(zend_class_entry *) * ce->num_interfaces);
++		if (ce->num_interfaces) {
++			/* Also copy the parent interfaces here, so we don't need to reallocate later. */
++			uint32_t num_parent_interfaces = parent ? parent->num_interfaces : 0;
++			zend_class_entry **interfaces = emalloc(
++					sizeof(zend_class_entry *) * (ce->num_interfaces + num_parent_interfaces));
+ 
+-		zend_do_implement_interfaces(ce, interfaces);
+-	} else if (parent && parent->num_interfaces) {
+-		zend_do_inherit_interfaces(ce, parent);
+-	}
+-	if (!(ce->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT))
+-		&& (ce->ce_flags & (ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS))
+-	) {
+-		zend_verify_abstract_class(ce);
+-	}
+-	if (ce->ce_flags & ZEND_ACC_ENUM) {
+-		zend_verify_enum(ce);
+-	}
++			if (num_parent_interfaces) {
++				memcpy(interfaces, parent->interfaces,
++					   sizeof(zend_class_entry *) * num_parent_interfaces);
++			}
++			memcpy(interfaces + num_parent_interfaces, traits_and_interfaces + ce->num_traits,
++				   sizeof(zend_class_entry *) * ce->num_interfaces);
+ 
+-	/* Normally Stringable is added during compilation. However, if it is imported from a trait,
+-	 * we need to explicilty add the interface here. */
+-	if (ce->__tostring && !(ce->ce_flags & ZEND_ACC_TRAIT)
++			zend_do_implement_interfaces(ce, interfaces);
++		} else if (parent && parent->num_interfaces) {
++			zend_do_inherit_interfaces(ce, parent);
++		}
++		if (!(ce->ce_flags & (ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT))
++			&& (ce->ce_flags & (ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS))
++				) {
++			zend_verify_abstract_class(ce);
++		}
++		if (ce->ce_flags & ZEND_ACC_ENUM) {
++			zend_verify_enum(ce);
++		}
++
++		/* Normally Stringable is added during compilation. However, if it is imported from a trait,
++		 * we need to explicilty add the interface here. */
++		if (ce->__tostring && !(ce->ce_flags & ZEND_ACC_TRAIT)
+ 			&& !zend_class_implements_interface(ce, zend_ce_stringable)) {
+-		ZEND_ASSERT(ce->__tostring->common.fn_flags & ZEND_ACC_TRAIT_CLONE);
+-		ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
+-		ce->num_interfaces++;
+-		ce->interfaces = perealloc(ce->interfaces,
+-			sizeof(zend_class_entry *) * ce->num_interfaces, ce->type == ZEND_INTERNAL_CLASS);
+-		ce->interfaces[ce->num_interfaces - 1] = zend_ce_stringable;
+-		do_interface_implementation(ce, zend_ce_stringable);
+-	}
++			ZEND_ASSERT(ce->__tostring->common.fn_flags & ZEND_ACC_TRAIT_CLONE);
++			ce->ce_flags |= ZEND_ACC_RESOLVED_INTERFACES;
++			ce->num_interfaces++;
++			ce->interfaces = perealloc(ce->interfaces,
++									   sizeof(zend_class_entry *) * ce->num_interfaces, ce->type == ZEND_INTERNAL_CLASS);
++			ce->interfaces[ce->num_interfaces - 1] = zend_ce_stringable;
++			do_interface_implementation(ce, zend_ce_stringable);
++		}
++
++		zend_build_properties_info_table(ce);
++	} zend_catch {
++		/* Do not leak recorded errors to the next linked class. */
++		if (!orig_record_errors) {
++			EG(record_errors) = false;
++			zend_free_recorded_errors();
++		}
++		zend_bailout();
++	} zend_end_try();
+ 
+-	zend_build_properties_info_table(ce);
+ 	EG(record_errors) = orig_record_errors;
+ 
+ 	if (!(ce->ce_flags & ZEND_ACC_UNRESOLVED_VARIANCE)) {
+@@ -3038,22 +3050,29 @@ zend_class_entry *zend_try_early_bind(zend_class_entry *ce, zend_class_entry *pa
+ 		orig_linking_class = CG(current_linking_class);
+ 		CG(current_linking_class) = is_cacheable ? ce : NULL;
+ 
+-		if (is_cacheable) {
+-			zend_begin_record_errors();
+-		}
++		zend_try{
++			if (is_cacheable) {
++				zend_begin_record_errors();
++			}
+ 
+-		zend_do_inheritance_ex(ce, parent_ce, status == INHERITANCE_SUCCESS);
+-		if (parent_ce && parent_ce->num_interfaces) {
+-			zend_do_inherit_interfaces(ce, parent_ce);
+-		}
+-		zend_build_properties_info_table(ce);
+-		if ((ce->ce_flags & (ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS)) == ZEND_ACC_IMPLICIT_ABSTRACT_CLASS) {
+-			zend_verify_abstract_class(ce);
+-		}
+-		ZEND_ASSERT(!(ce->ce_flags & ZEND_ACC_UNRESOLVED_VARIANCE));
+-		ce->ce_flags |= ZEND_ACC_LINKED;
++			zend_do_inheritance_ex(ce, parent_ce, status == INHERITANCE_SUCCESS);
++			if (parent_ce && parent_ce->num_interfaces) {
++				zend_do_inherit_interfaces(ce, parent_ce);
++			}
++			zend_build_properties_info_table(ce);
++			if ((ce->ce_flags & (ZEND_ACC_IMPLICIT_ABSTRACT_CLASS|ZEND_ACC_INTERFACE|ZEND_ACC_TRAIT|ZEND_ACC_EXPLICIT_ABSTRACT_CLASS)) == ZEND_ACC_IMPLICIT_ABSTRACT_CLASS) {
++				zend_verify_abstract_class(ce);
++			}
++			ZEND_ASSERT(!(ce->ce_flags & ZEND_ACC_UNRESOLVED_VARIANCE));
++			ce->ce_flags |= ZEND_ACC_LINKED;
++
++			CG(current_linking_class) = orig_linking_class;
++		} zend_catch {
++			EG(record_errors) = false;
++			zend_free_recorded_errors();
++			zend_bailout();
++		} zend_end_try();
+ 
+-		CG(current_linking_class) = orig_linking_class;
+ 		EG(record_errors) = false;
+ 
+ 		if (is_cacheable) {
+diff --git a/ext/opcache/tests/gh8063-001.phpt b/ext/opcache/tests/gh8063-001.phpt
+new file mode 100644
+index 0000000000..320d40aa3a
+--- /dev/null
++++ b/ext/opcache/tests/gh8063-001.phpt
+@@ -0,0 +1,31 @@
++--TEST--
++Bug GH-8063 (Opcache breaks autoloading after E_COMPILE_ERROR) 001
++--INI--
++opcache.enable=1
++opcache.enable_cli=1
++opcache.record_warnings=0
++--EXTENSIONS--
++opcache
++--FILE--
++<?php
++
++spl_autoload_register(function ($class) {
++    printf("Autoloading %s\n", $class);
++    include __DIR__.DIRECTORY_SEPARATOR.'gh8063'.DIRECTORY_SEPARATOR.$class.'.inc';
++});
++
++register_shutdown_function(function () {
++    new Bar();
++    new Baz();
++    print "Finished\n";
++});
++
++new BadClass();
++--EXPECTF--
++Autoloading BadClass
++Autoloading Foo
++
++Fatal error: Declaration of BadClass::dummy() must be compatible with Foo::dummy(): void in %sBadClass.inc on line 5
++Autoloading Bar
++Autoloading Baz
++Finished
+diff --git a/ext/opcache/tests/gh8063-002.phpt b/ext/opcache/tests/gh8063-002.phpt
+new file mode 100644
+index 0000000000..b458a06213
+--- /dev/null
++++ b/ext/opcache/tests/gh8063-002.phpt
+@@ -0,0 +1,31 @@
++--TEST--
++Bug GH-8063 (Opcache breaks autoloading after E_COMPILE_ERROR) 002
++--INI--
++opcache.enable=1
++opcache.enable_cli=1
++opcache.record_warnings=1
++--EXTENSIONS--
++opcache
++--FILE--
++<?php
++
++spl_autoload_register(function ($class) {
++    printf("Autoloading %s\n", $class);
++    include __DIR__.DIRECTORY_SEPARATOR.'gh8063'.DIRECTORY_SEPARATOR.$class.'.inc';
++});
++
++register_shutdown_function(function () {
++    new Bar();
++    new Baz();
++    print "Finished\n";
++});
++
++new BadClass();
++--EXPECTF--
++Autoloading BadClass
++Autoloading Foo
++
++Fatal error: Declaration of BadClass::dummy() must be compatible with Foo::dummy(): void in %sBadClass.inc on line 5
++Autoloading Bar
++Autoloading Baz
++Finished
+diff --git a/ext/opcache/tests/gh8063-003.phpt b/ext/opcache/tests/gh8063-003.phpt
+new file mode 100644
+index 0000000000..9f918894b6
+--- /dev/null
++++ b/ext/opcache/tests/gh8063-003.phpt
+@@ -0,0 +1,30 @@
++--TEST--
++Bug GH-8063 (Opcache breaks autoloading after E_COMPILE_ERROR) 003
++--INI--
++opcache.enable=1
++opcache.enable_cli=1
++opcache.record_warnings=0
++--EXTENSIONS--
++opcache
++--FILE--
++<?php
++
++spl_autoload_register(function ($class) {
++    printf("Autoloading %s\n", $class);
++    include __DIR__.DIRECTORY_SEPARATOR.'gh8063'.DIRECTORY_SEPARATOR.$class.'.inc';
++});
++
++register_shutdown_function(function () {
++    new Bar();
++    new Baz();
++    print "Finished\n";
++});
++
++new BadClass2();
++--EXPECTF--
++Autoloading BadClass2
++
++Fatal error: Declaration of BadClass2::dummy() must be compatible with Foo2::dummy(): void in %sBadClass2.inc on line %d
++Autoloading Bar
++Autoloading Baz
++Finished
+diff --git a/ext/opcache/tests/gh8063/BadClass.inc b/ext/opcache/tests/gh8063/BadClass.inc
+new file mode 100644
+index 0000000000..21e5135264
+--- /dev/null
++++ b/ext/opcache/tests/gh8063/BadClass.inc
+@@ -0,0 +1,8 @@
++<?php
++
++class BadClass extends Foo
++{
++    function dummy()
++    {
++    }
++}
+diff --git a/ext/opcache/tests/gh8063/BadClass2.inc b/ext/opcache/tests/gh8063/BadClass2.inc
+new file mode 100644
+index 0000000000..846cf93413
+--- /dev/null
++++ b/ext/opcache/tests/gh8063/BadClass2.inc
+@@ -0,0 +1,15 @@
++<?php
++
++class Foo2
++{
++    function dummy(): void
++    {
++    }
++}
++
++class BadClass2 extends Foo2
++{
++    function dummy()
++    {
++    }
++}
+diff --git a/ext/opcache/tests/gh8063/Bar.inc b/ext/opcache/tests/gh8063/Bar.inc
+new file mode 100644
+index 0000000000..3808cd63ab
+--- /dev/null
++++ b/ext/opcache/tests/gh8063/Bar.inc
+@@ -0,0 +1,3 @@
++<?php
++
++class Bar {}
+diff --git a/ext/opcache/tests/gh8063/Baz.inc b/ext/opcache/tests/gh8063/Baz.inc
+new file mode 100644
+index 0000000000..ae3913343a
+--- /dev/null
++++ b/ext/opcache/tests/gh8063/Baz.inc
+@@ -0,0 +1,3 @@
++<?php
++
++class Baz {}
+diff --git a/ext/opcache/tests/gh8063/Foo.inc b/ext/opcache/tests/gh8063/Foo.inc
+new file mode 100644
+index 0000000000..9d89370564
+--- /dev/null
++++ b/ext/opcache/tests/gh8063/Foo.inc
+@@ -0,0 +1,8 @@
++<?php
++
++class Foo
++{
++    function dummy(): void
++    {
++    }
++}
+-- 
+2.34.1
+
