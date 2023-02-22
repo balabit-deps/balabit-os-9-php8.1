@@ -19,3 +19,6 @@ Depends: apache2,
          php8.1-fpm,
          wget
 Restrictions: needs-root
+
+Tests: version
+Depends: php8.1-cli

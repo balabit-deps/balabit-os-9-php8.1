@@ -1,0 +1,64 @@
+From 84c18f9f04cb9852d992194e613927154f765192 Mon Sep 17 00:00:00 2001
+From: Bernd Holzmüller <bernd@quarxconnect.de>
+Date: Sat, 9 Apr 2022 17:49:47 +0200
+Subject: [PATCH] Preserve file-position when php://temp switches to temporary file
+
+Closes GH-8333.
+
+Bug: https://github.com/php/php-src/pull/8333
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/php8.1/+bug/1990302
+Last-Update: 2022-10-19
+Origin: backport, https://github.com/php/php-src/commit/84c18f9f04cb9852d992194e613927154f765192
+---
+ .../tests/streams/temp_stream_seek.phpt       | 20 +++++++++++++++++++
+ main/streams/memory.c                         | 10 ++++++----
+ 3 files changed, 30 insertions(+), 4 deletions(-)
+ create mode 100644 ext/standard/tests/streams/temp_stream_seek.phpt
+
+--- /dev/null
++++ b/ext/standard/tests/streams/temp_stream_seek.phpt
+@@ -0,0 +1,20 @@
++--TEST--
++BUG: php://temp does not preserve file-pointer once it switches from memory to temporary file
++--FILE--
++<?php
++
++$f = fopen('php://temp/maxmemory:1024', 'r+');
++fwrite($f, str_repeat("1", 738));
++fseek($f, 0, SEEK_SET);
++fwrite($f, str_repeat("2", 512));
++
++fseek($f, 0, SEEK_SET);
++var_dump(fread($f, 16));
++
++fseek($f, 0, SEEK_END);
++var_dump(ftell($f));
++
++?>
++--EXPECT--
++string(16) "2222222222222222"
++int(738)
+--- a/main/streams/memory.c
++++ b/main/streams/memory.c
+@@ -345,9 +345,10 @@
+ 		return -1;
+ 	}
+ 	if (php_stream_is(ts->innerstream, PHP_STREAM_IS_MEMORY)) {
+-		zend_string *membuf = php_stream_memory_get_buffer(ts->innerstream);
+-
+-		if (ZSTR_LEN(membuf) + count >= ts->smax) {
++		zend_off_t pos = php_stream_tell(ts->innerstream);
++		
++		if (pos + count >= ts->smax) {
++			zend_string *membuf = php_stream_memory_get_buffer(ts->innerstream);
+ 			php_stream *file = php_stream_fopen_temporary_file(ts->tmpdir, "php", NULL);
+ 			if (file == NULL) {
+ 				php_error_docref(NULL, E_WARNING, "Unable to create temporary file, Check permissions in temporary files directory.");
+@@ -357,6 +358,7 @@
+ 			php_stream_free_enclosed(ts->innerstream, PHP_STREAM_FREE_CLOSE);
+ 			ts->innerstream = file;
+ 			php_stream_encloses(stream, ts->innerstream);
++			php_stream_seek(ts->innerstream, pos, SEEK_SET);
+ 		}
+ 	}
+ 	return php_stream_write(ts->innerstream, buf, count);

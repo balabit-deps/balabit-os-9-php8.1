@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# Author: Athos Ribeiro <athos.ribeiro@canonical.com>
+
+# Ensure that the PHP_EXTRA_VERSION is being set with the debian version
+
+PKGVERSION=$(dpkg-query --showformat='${Version}\n' --show php@PHP_VERSION@-cli)
+PHPVERSION=$(php@PHP_VERSION@ --version | head -1 | cut -d ' ' -f2)
+
+if [ "${PKGVERSION}" != "${PHPVERSION}" ]; then
+	echo "package version '${PKGVERSION}' does not match php CLI version '${PHPVERSION}'"
+	exit 1
+fi

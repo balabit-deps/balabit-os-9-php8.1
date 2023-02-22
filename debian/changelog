@@ -1,3 +1,83 @@
+php8.1 (8.1.2-1ubuntu2.11) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: password_verify() accepts invalid Blowfish hashes
+    - debian/patches/CVE-2023-0567-1.patch: fix validation of malformed
+      BCrypt hashes in ext/standard/crypt_blowfish.c,
+      ext/standard/tests/crypt/bcrypt_salt_dollar.phpt.
+    - debian/patches/CVE-2023-0567-2.patch: fix possible buffer overread in
+      php_crypt() in ext/standard/crypt.c,
+      ext/standard/tests/password/password_bcrypt_short.phpt.
+    - CVE-2023-0567
+  * SECURITY UPDATE: off-by-one in core path resolution function
+    - debian/patches/CVE-2023-0568.patch: fix array overrun when appending
+      slash to paths in ext/dom/document.c, ext/xmlreader/php_xmlreader.c,
+      main/fopen_wrappers.c.
+    - CVE-2023-0568
+  * SECURITY UPDATE: DoS via excessive number of parts in HTTP form upload
+    - debian/patches/CVE-2023-0662-1.patch: introduce
+      max_multipart_body_parts INI in main/main.c, main/rfc1867.c,
+      sapi/fpm/tests/*, sapi/fpm/tests/tester.inc.
+    - debian/patches/CVE-2023-0662-2.patch: fix repeated warning for file
+      uploads limit exceeding in main/rfc1867.c.
+    - CVE-2023-0662
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 22 Feb 2023 17:56:18 -0500
+
+php8.1 (8.1.2-1ubuntu2.10) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Integer overflow
+    - debian/patches/CVE-2022-31631-*.patch: fix check
+      unquotedlen size in ext/pdo_sqlite/sqlite_driver.c.
+    - CVE-2022-31631
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Mon, 16 Jan 2023 12:19:49 -0300
+
+php8.1 (8.1.2-1ubuntu2.9) jammy; urgency=medium
+
+  * d/p/0049-Preserve-file-position-when-php-temp-switches.patch: PHP provides
+    a temporary data stream, php://temp, whose contents are moved to a
+    temporary file when a predefined size limit is hit. In jammy, the file
+    position is set to the end of the file, which results in corrupted/unwanted
+    data. Fix this by preserving the file position in this situation.
+    (LP: #1990302)
+
+ -- Athos Ribeiro <athos.ribeiro@canonical.com>  Wed, 19 Oct 2022 11:58:09 -0300
+
+php8.1 (8.1.2-1ubuntu2.8) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Denial of service
+    - debian/patches/CVE-2022-31628-1.patch: adding a recursion limit
+      in ext/phar/phar.c, ext/phar/tests/bug81726.phpt.
+    - debian/source/include-binaries: add ext/phar/tests/bug81726.gz.
+    - debian/patches/CVE-2022-31628-2.patch: avoid a second check in
+      ext/phar/phar.c.
+    - CVE-2022-31628
+  * SECURITY UPDATE: Cookie injection
+    - debian/patches/CVE-2022-31629.patch: don't mangle HTTP
+      variable names that clash with ones that have a specific semantic
+      meaning in ext/standard/test/bug81727.phpt,
+      main/php_variables.c.
+    - CVE-2022-31629
+  * SECURITY UPDATE: Out of bounds read
+    - debian/patches/CVE-2022-31630.patch: adds validation in
+      imageloadfont() for OOB in ext/gd/gd.c, ext/gd/tests/bug81739.phpt.
+    - CVE-2022-31630
+  * SECURITY UPDATE: Buffer overflow
+    - debian/patches/CVE-2022-37454.patch: fixes buffer overflow in
+      hash_update() on long parameter in
+      ext/hash/sha3/generic32lc/KeccakSponge.inc,
+      ext/hash/sha3/generic64lc/KeccakSponge.inc.
+    - CVE-2022-37454
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Wed, 02 Nov 2022 10:35:25 -0300
+
+php8.1 (8.1.2-1ubuntu2.6) jammy; urgency=medium
+
+  * d/rules: fix PHP_EXTRA_VERSION setting. (LP: #1989196)
+  * Test PHP_EXTRA_VERSION setting with autopkgtest.
+
+ -- Athos Ribeiro <athos.ribeiro@canonical.com>  Thu, 15 Sep 2022 08:30:49 -0300
+
 php8.1 (8.1.2-1ubuntu2.5) jammy; urgency=medium
 
   * d/p/0048-Clear-recorded-errors-before-executing-shutdown-func.patch:

@@ -19,3 +19,6 @@ Depends: apache2,
          php@PHP_VERSION@-fpm,
          wget
 Restrictions: needs-root
+
+Tests: version
+Depends: php@PHP_VERSION@-cli

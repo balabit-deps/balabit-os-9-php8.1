@@ -276,13 +276,13 @@ PREPARE_FILES := $(addprefix debian/,$(shell cat debian/prepare-files))
 
 prepared: prepared-stamp debian/control debian/source.lintian-overrides
 prepared-stamp:
-	$(SED) -i -e 's/EXTRA_VERSION=""/EXTRA_VERSION="-$(PHP_DEBIAN_REVISION)"/' configure.ac
+	$(SED) -i -e 's/^PHP_EXTRA_VERSION=\[\$$\]4$$/PHP_EXTRA_VERSION="-$(PHP_DEBIAN_REVISION)"/' configure.ac
 	./buildconf --force
 	touch prepared-stamp
 
 unprepared:
 	dh_testdir
-	$(SED) -i -e 's/EXTRA_VERSION="-$(PHP_DEBIAN_REVISION)"/EXTRA_VERSION=""/' configure.ac
+	$(SED) -i -e 's/^PHP_EXTRA_VERSION="-$(PHP_DEBIAN_REVISION)"/PHP_EXTRA_VERSION=[$$]4/' configure.ac
 	-[ -f ext/ext_skel.in ] && mv ext/ext_skel.in ext/ext_skel
 	rm -f prepared-stamp
 
