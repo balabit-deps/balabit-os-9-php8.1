@@ -1,3 +1,23 @@
+php8.1 (8.1.2-1ubuntu2.13) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Missing error check and insufficient random
+    bytes
+    - debian/patches/CVE-2023-3247-1.patch: fixes missing randomness
+      check and insufficient random byes for SOAP HTTP digest
+      in ext/soap/php_http.c.
+    - debian/patches/CVE-2023-3247-2.patch: fix wrong backporting of previous
+      soap patch.
+    - CVE-2023-3247
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Wed, 28 Jun 2023 11:01:49 -0300
+
+php8.1 (8.1.2-1ubuntu2.12) jammy; urgency=medium
+
+  * d/p/fix-map-ptr-mem-leak.patch: Fix map_ptr opcache-less fpm memory leak.
+    (LP: #2017207)
+
+ -- Athos Ribeiro <athos.ribeiro@canonical.com>  Wed, 14 Jun 2023 19:57:19 -0300
+
 php8.1 (8.1.2-1ubuntu2.11) jammy-security; urgency=medium
 
   * SECURITY UPDATE: password_verify() accepts invalid Blowfish hashes

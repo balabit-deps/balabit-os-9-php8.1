@@ -63,3 +63,6 @@ CVE-2023-0567-2.patch
 CVE-2023-0568.patch
 CVE-2023-0662-1.patch
 CVE-2023-0662-2.patch
+fix-map-ptr-mem-leak.patch
+CVE-2023-3247-1.patch
+CVE-2023-3247-2.patch

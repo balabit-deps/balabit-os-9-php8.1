@@ -1,0 +1,199 @@
+From ff62d117a35509699f8bac8b0750a956914da1b7 Mon Sep 17 00:00:00 2001
+From: Niels Dossche <7771979+nielsdos@users.noreply.github.com>
+Date: Sat, 4 Mar 2023 23:22:05 +0100
+Subject: [PATCH] Fix GH-8646: Memory leak PHP FPM 8.1
+
+Fixes GH-8646
+See https://github.com/php/php-src/issues/8646 for thorough discussion.
+
+Interned strings that hold class entries can get a corresponding slot in map_ptr for the CE cache.
+map_ptr works like a bump allocator: there is a counter which increases to allocate the next slot in the map.
+
+For class name strings in non-opcache we have:
+  - on startup: permanent + interned
+  - on request: interned
+For class name strings in opcache we have:
+  - on startup: permanent + interned
+  - on request: either not interned at all, which we can ignore because they won't get a CE cache entry
+                or they were already permanent + interned
+                or we get a new permanent + interned string in the opcache persistence code
+
+Notice that the map_ptr layout always has the permanent strings first, and the request strings after.
+In non-opcache, a request string may get a slot in map_ptr, and that interned request string
+gets destroyed at the end of the request. The corresponding map_ptr slot can thereafter never be used again.
+This causes map_ptr to keep reallocating to larger and larger sizes.
+
+We solve it as follows:
+We can check whether we had any interned request strings, which only happens in non-opcache.
+If we have any, we reset map_ptr to the last permanent string.
+We can't lose any permanent strings because of map_ptr's layout.
+
+Closes GH-10783.
+
+Bug: https://github.com/php/php-src/issues/8646
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/php8.1/+bug/2017207
+Origin: backport, https://github.com/php/php-src/commit/ff62d117a35509699f8bac8b0750a956914da1b7
+Last-Update: 2023-06-14
+---
+ NEWS                         |  1 +
+ Zend/zend.c                  | 28 +++++++++++++++++++
+ ext/zend_test/test.c         |  6 +++++
+ ext/zend_test/test.stub.php  |  2 ++
+ ext/zend_test/test_arginfo.h | 10 ++++---
+ sapi/fpm/tests/gh8646.phpt   | 52 ++++++++++++++++++++++++++++++++++++
+ 6 files changed, 96 insertions(+), 3 deletions(-)
+ create mode 100644 sapi/fpm/tests/gh8646.phpt
+
+--- a/Zend/zend.c
++++ b/Zend/zend.c
+@@ -1268,6 +1268,34 @@
+ 
+ 	zend_destroy_rsrc_list(&EG(regular_list));
+ 
++	/* See GH-8646: https://github.com/php/php-src/issues/8646
++	 *
++	 * Interned strings that hold class entries can get a corresponding slot in map_ptr for the CE cache.
++	 * map_ptr works like a bump allocator: there is a counter which increases to allocate the next slot in the map.
++	 *
++	 * For class name strings in non-opcache we have:
++	 *   - on startup: permanent + interned
++	 *   - on request: interned
++	 * For class name strings in opcache we have:
++	 *   - on startup: permanent + interned
++	 *   - on request: either not interned at all, which we can ignore because they won't get a CE cache entry
++	 *                 or they were already permanent + interned
++	 *                 or we get a new permanent + interned string in the opcache persistence code
++	 *
++	 * Notice that the map_ptr layout always has the permanent strings first, and the request strings after.
++	 * In non-opcache, a request string may get a slot in map_ptr, and that interned request string
++	 * gets destroyed at the end of the request. The corresponding map_ptr slot can thereafter never be used again.
++	 * This causes map_ptr to keep reallocating to larger and larger sizes.
++	 *
++	 * We solve it as follows:
++	 * We can check whether we had any interned request strings, which only happens in non-opcache.
++	 * If we have any, we reset map_ptr to the last permanent string.
++	 * We can't lose any permanent strings because of map_ptr's layout.
++	 */
++	if (zend_hash_num_elements(&CG(interned_strings)) > 0) {
++		zend_map_ptr_reset();
++	}
++
+ #if GC_BENCH
+ 	fprintf(stderr, "GC Statistics\n");
+ 	fprintf(stderr, "-------------\n");
+--- a/ext/zend_test/test.c
++++ b/ext/zend_test/test.c
+@@ -278,6 +278,12 @@
+ 	RETURN_TRUE;
+ }
+ 
++static ZEND_FUNCTION(zend_get_map_ptr_last)
++{
++	ZEND_PARSE_PARAMETERS_NONE();
++	RETURN_LONG(CG(map_ptr_last));
++}
++
+ static zend_object *zend_test_class_new(zend_class_entry *class_type)
+ {
+ 	zend_object *obj = zend_objects_new(class_type);
+--- a/ext/zend_test/test.stub.php
++++ b/ext/zend_test/test.stub.php
+@@ -93,6 +93,8 @@
+     function zend_weakmap_dump(): array {}
+ 
+     function zend_get_unit_enum(): ZendTestUnitEnum {}
++
++    function zend_get_map_ptr_last(): int {}
+ }
+ 
+ namespace ZendTestNS {
+--- a/ext/zend_test/test_arginfo.h
++++ b/ext/zend_test/test_arginfo.h
+@@ -65,12 +65,14 @@
+ ZEND_BEGIN_ARG_WITH_RETURN_OBJ_INFO_EX(arginfo_zend_get_unit_enum, 0, 0, ZendTestUnitEnum, 0)
+ ZEND_END_ARG_INFO()
+ 
+-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ZendTestNS2_ZendSubNS_namespaced_func, 0, 0, _IS_BOOL, 0)
++ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_zend_get_map_ptr_last, 0, 0, IS_LONG, 0)
+ ZEND_END_ARG_INFO()
+ 
+-ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_class__ZendTestClass_is_object, 0, 0, IS_LONG, 0)
++ZEND_BEGIN_ARG_WITH_RETURN_TYPE_INFO_EX(arginfo_ZendTestNS2_ZendSubNS_namespaced_func, 0, 0, _IS_BOOL, 0)
+ ZEND_END_ARG_INFO()
+ 
++#define arginfo_class__ZendTestClass_is_object arginfo_zend_get_map_ptr_last
++
+ ZEND_BEGIN_ARG_INFO_EX(arginfo_class__ZendTestClass___toString, 0, 0, 0)
+ ZEND_END_ARG_INFO()
+ 
+@@ -109,6 +111,7 @@
+ static ZEND_FUNCTION(zend_weakmap_remove);
+ static ZEND_FUNCTION(zend_weakmap_dump);
+ static ZEND_FUNCTION(zend_get_unit_enum);
++static ZEND_FUNCTION(zend_get_map_ptr_last);
+ static ZEND_FUNCTION(namespaced_func);
+ static ZEND_METHOD(_ZendTestClass, is_object);
+ static ZEND_METHOD(_ZendTestClass, __toString);
+@@ -139,6 +142,7 @@
+ 	ZEND_FE(zend_weakmap_remove, arginfo_zend_weakmap_remove)
+ 	ZEND_FE(zend_weakmap_dump, arginfo_zend_weakmap_dump)
+ 	ZEND_FE(zend_get_unit_enum, arginfo_zend_get_unit_enum)
++	ZEND_FE(zend_get_map_ptr_last, arginfo_zend_get_map_ptr_last)
+ 	ZEND_NS_FE("ZendTestNS2\\ZendSubNS", namespaced_func, arginfo_ZendTestNS2_ZendSubNS_namespaced_func)
+ 	ZEND_FE_END
+ };
+--- /dev/null
++++ b/sapi/fpm/tests/gh8646.phpt
+@@ -0,0 +1,52 @@
++--TEST--
++GH-8646 (Memory leak PHP FPM 8.1)
++--EXTENSIONS--
++zend_test
++--SKIPIF--
++<?php include "skipif.inc"; ?>
++--FILE--
++<?php
++
++require_once "tester.inc";
++
++$cfg = <<<EOT
++[global]
++error_log = {{FILE:LOG}}
++[unconfined]
++listen = {{ADDR}}
++pm = dynamic
++pm.max_children = 5
++pm.start_servers = 1
++pm.min_spare_servers = 1
++pm.max_spare_servers = 3
++EOT;
++
++$code = <<<EOT
++<?php
++class MyClass {}
++echo zend_get_map_ptr_last();
++EOT;
++
++$tester = new FPM\Tester($cfg, $code);
++$tester->start();
++$tester->expectLogStartNotices();
++$map_ptr_last_values = [];
++for ($i = 0; $i < 10; $i++) {
++    $map_ptr_last_values[] = (int) $tester->request()->getBody();
++}
++// Ensure that map_ptr_last did not increase
++var_dump(count(array_unique($map_ptr_last_values, SORT_REGULAR)) === 1);
++$tester->terminate();
++$tester->expectLogTerminatingNotices();
++$tester->close();
++
++?>
++Done
++--EXPECT--
++bool(true)
++Done
++--CLEAN--
++<?php
++require_once "tester.inc";
++FPM\Tester::clean();
++?>
