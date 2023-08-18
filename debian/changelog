@@ -1,3 +1,22 @@
+php8.1 (8.1.2-1ubuntu2.14) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Disclosure sensitive information
+    - debian/patches/CVE-2023-3823.patch: sanitieze libxml2 globals
+      before parsing in ext/dom/document.c, ext/dom/documentfragment.c,
+      xml_global_state_entity_loader_bypass.phpt, ext/libxml/php_libxml.h,
+      ext/simplexml/simplexml.c, xml_global_state_entity_loader_bypass.phpt,
+      ext/soap/php_xml.c, ext/xml/compat.c, ext/xmlreader/php_xmlreader.c,
+      xml_global_state_entity_loader_bypass.phpt, ext/xsl/xsltprocessor.c,
+      ext/zend_test/test.c, ext/zend_test/test.stub.php.
+    - CVE-2023-3823
+  * SECURITY UPDATE: Stack buffer overflow
+    - debian/patches/CVE-2023-3824.patch: fix buffer mismanagement in
+      phar_dir_read(), and in files ext/phar/dirstream.c,
+      ext/phar/tests/GHSA-jqcx-ccgx-xwhv.phpt.
+    - CVE-2023-3824
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Fri, 18 Aug 2023 08:41:11 -0300
+
 php8.1 (8.1.2-1ubuntu2.13) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Missing error check and insufficient random
