@@ -68,3 +68,5 @@ CVE-2023-3247-1.patch
 CVE-2023-3247-2.patch
 CVE-2023-3823.patch
 CVE-2023-3824.patch
+fix-attribute-instantion-dangling-pointer.patch
+fix-attribute-instantion-memory-overflow-recovery.patch
