@@ -70,3 +70,7 @@ CVE-2023-3823.patch
 CVE-2023-3824.patch
 fix-attribute-instantion-dangling-pointer.patch
 fix-attribute-instantion-memory-overflow-recovery.patch
+fix-segfault-in-fpm_status_export_to_zval.patch
+CVE-2022-4900.patch
+CVE-2024-2756.patch
+CVE-2024-3096.patch

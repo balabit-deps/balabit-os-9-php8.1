@@ -1,0 +1,27 @@
+From df259f88daaf7df5673fd78a0a1b76a1d831d0a2 Mon Sep 17 00:00:00 2001
+From: Patrick Prasse <patrick.prasse@actindo.com>
+Date: Fri, 17 Nov 2023 16:32:23 +0000
+Subject: [PATCH] Fix bug GH-12705: Segmentation fault in fpm_status_export_to_zval
+
+Closes GH-12706
+
+Bug: https://github.com/php/php-src/issues/12705
+Bug-Ubuntu: https://bugs.launchpad.net/ubuntu/+source/php7.4/+bug/2057576
+Last-update: 2024-04-10
+Origin: upstream, https://github.com/php/php-src/commit/df259f88daaf7df5673fd78a0a1b76a1d831d0a2
+---
+ NEWS                      | 4 ++++
+ sapi/fpm/fpm/fpm_status.c | 2 +-
+ 2 files changed, 5 insertions(+), 1 deletion(-)
+
+--- a/sapi/fpm/fpm/fpm_status.c
++++ b/sapi/fpm/fpm/fpm_status.c
+@@ -55,7 +55,7 @@
+ 
+ 	scoreboard_p = fpm_scoreboard_acquire(NULL, 1);
+ 	if (!scoreboard_p) {
+-		zlog(ZLOG_NOTICE, "[pool %s] status: scoreboard already in use.", scoreboard_p->pool);
++		zlog(ZLOG_NOTICE, "[pool (unknown)] status: scoreboard already in use.");
+ 		return -1;
+ 	}
+ 

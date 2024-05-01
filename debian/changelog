@@ -1,3 +1,29 @@
+php8.1 (8.1.2-1ubuntu2.17) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Heap buffer-overflow
+    - debian/patches/CVE-2022-4900.patch: prevent potential buffer
+      overflow for large valye of php_cli_server_workers_max in
+      sapi/cli/php_cli_server.c.
+    - CVE-2022-4900
+  * SECURITY UPDATE: Cookie by pass
+    - debian/patches/CVE-2024-2756.patch: adds more mangling rules
+      in main/php_variable.c.
+    - CVE-2024-2756
+  * SECURITY UPDATE: Account take over risk
+    - debian/patches/CVE-2024-3096.patch: disallow null character in bcrypt
+      password in ext/standard/password.c,
+      ext/standard/tests/password_bcrypt_errors.phpt.
+    - CVE-2024-3096
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Wed, 01 May 2024 07:10:07 -0300
+
+php8.1 (8.1.2-1ubuntu2.16) jammy; urgency=medium
+
+  * d/p/fix-segfault-in-fpm_status_export_to_zval.patch: fix
+    segmentation fault in fpm_status_export_to_zval. (LP: #2057576)
+
+ -- Athos Ribeiro <athos.ribeiro@canonical.com>  Wed, 10 Apr 2024 08:54:30 -0300
+
 php8.1 (8.1.2-1ubuntu2.15) jammy; urgency=medium
 
   * d/p/fix-attribute-instantion-dangling-pointer.patch: Fix sigsegv from
