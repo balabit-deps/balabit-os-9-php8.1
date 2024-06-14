@@ -74,3 +74,4 @@ fix-segfault-in-fpm_status_export_to_zval.patch
 CVE-2022-4900.patch
 CVE-2024-2756.patch
 CVE-2024-3096.patch
+CVE-2024-5458.patch

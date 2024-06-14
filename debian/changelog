@@ -1,3 +1,13 @@
+php8.1 (8.1.2-1ubuntu2.18) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Invalid user information
+    - debian/patches/CVE-2024-5458.patch: improves filters validation
+      in ext/filter/logical_filters.c and adds test
+      in ext/filter/tests/ghsa-w8qr-v226-r27w.phpt.
+    - CVE-2024-5458
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Fri, 14 Jun 2024 12:52:55 -0300
+
 php8.1 (8.1.2-1ubuntu2.17) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Heap buffer-overflow
