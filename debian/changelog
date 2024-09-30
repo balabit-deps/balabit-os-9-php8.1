@@ -1,3 +1,21 @@
+php8.1 (8.1.2-1ubuntu2.19) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Erroneous parsing of multipart form data
+    - debian/patches/CVE-2024-8925.patch: limit bounday size in
+      main/rfc1867.c, tests/basic/*.
+    - CVE-2024-8925
+  * SECURITY UPDATE: cgi.force_redirect configuration can be bypassed due
+    to environment variable collision
+    - debian/patches/CVE-2024-8927.patch: check for REDIRECT_STATUS in
+      sapi/cgi/cgi_main.c.
+    - CVE-2024-8927
+  * SECURITY UPDATE: Logs from childrens may be altered
+    - debian/patches/CVE-2024-9026.patch: properly calculate size in
+      sapi/fpm/fpm/fpm_stdio.c, sapi/fpm/tests/*.
+    - CVE-2024-9026
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Mon, 30 Sep 2024 12:25:25 -0400
+
 php8.1 (8.1.2-1ubuntu2.18) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Invalid user information
