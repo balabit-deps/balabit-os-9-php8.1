@@ -1,3 +1,37 @@
+php8.1 (8.1.2-1ubuntu2.20) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Buffer over read
+    - debian/patches/CVE-2024-11233.patch: re arrange
+      bound check code in ext/standard/filters.c,
+      ext/standard/tests/filters/ghsa-r977-prxv-hc43.phpt.
+    - CVE-2024-11233
+  * SECURITY UPDATE: HTTP request smuggling
+    - debian/patches/CVE-2024-11234.patch: avoiding
+      fulluri CRLF injection in ext/standard/http_fopen_wrapper.c.
+      .../tests/http/ghsa-c5f2-jwm7-mmq2.phpt.
+    - CVE-2024-11234
+  * SECURITY UPDATE: Integer overflow
+    - debian/patches/CVE-2024-11236-1.patch: adding an extralen check
+      to avoid integer overflow in ext/pdo_dblib/dblib_driver.c,
+      ext/pdo_dblib/tests/GHSA-5hqh-c84r-qjcv.phpt.
+    - debian/patches/CVE-2024-11236-2.patch: change qcount to size_t in
+      order to avoid integer overflow and adding checks in
+      ext/pdo_firebird/firebird_driver.c.
+    - CVE-2024-11236
+  * SECURITY UPDATE: Heap buffer over-reads
+    - debian/patches/CVE-2024-8929.patch: fix buffer over-reads in
+      ext/mysqlnd/mysqlnd_ps_codec.c,
+      ext/mysqlnd/mysqlnd_wireprotocol.c, and create some phpt tests.
+    - CVE-2024-8929
+  * SECURITY UPDATE: Integer overflow
+    - debian/patches/CVE-2024-8932.patch: fix OOB in access in
+      ldap_escape in ext/ldap/ldap.c,
+      ext/ldap/tests/GHSA-g665-fm4p-vhff-1.phpt,
+      ext/ldap/tests/GHSA-g665-fm4p-vhff-2.phpt.
+    - CVE-2024-8932
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Tue, 03 Dec 2024 17:14:35 -0300
+
 php8.1 (8.1.2-1ubuntu2.19) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Erroneous parsing of multipart form data
