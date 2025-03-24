@@ -1,3 +1,53 @@
+php8.1 (8.1.2-1ubuntu2.21) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Use after free
+    - debian/patches/CVE-2024-11235.patch: fix incorrect live-range
+      calculation in Zend/zend_opcode.c and add tests in
+      Zend/tests/ghsa-rwp7-7vc6-8477_001.phpt,
+      Zend/tests/ghsa-rwp7-7vc6-8477_002.phpt,
+      Zend/tests/ghsa-rwp7-7vc6-8477_003.phpt.
+    - CVE-2024-11235
+  * SECURITY UPDATE: Incorrect MIME type
+    - debian/patches/CVE-2025-1217.patch: adds HTTP header folding
+      support for HTTP wrapper response headers in
+      ext/standard/http_fopen_wrapper.c and add tests in
+      ests/http/ghsa-v8xr-gpvj-cx9g-001.phpt,
+      tests/http/ghsa-v8xr-gpvj-cx9g-002.phpt,
+      tests/http/ghsa-v8xr-gpvj-cx9g-003.phpt,
+      tests/http/ghsa-v8xr-gpvj-cx9g-004.phpt,
+      tests/http/ghsa-v8xr-gpvj-cx9g-005.phpt,
+      tests/http/http_response_header_05.phpt.
+    - CVE-2025-1217
+  * SECURITY UPDATE: Wrong content-type requesting a redirected resource
+    - debian/patches/CVE-2025-1219.patch: fix in ext/libxml/mime_sniff.c.
+    - CVE-2025-1219
+  * SECURITY UPDATE: Invalid header
+    - debian/patches/CVE-2025-1734.patch: fix in ext/standard/http_fopen_wrapper.c
+      and add tests in
+      ext/standard/tests/http/bug47021.phpt,
+      ext/standard/tests/http/bug75535.phpt,
+      tests/http/ghsa-pcmh-g36c-qc44-001.phpt,
+      tests/http/ghsa-pcmh-g36c-qc44-002.phpt.
+    - CVE-2025-1734
+  * SECURITY UPDATE: Denial of service
+    - debian/patches/CVE-2025-1736.patch: httu user header check
+      of crlf in ext/standard/http_fopen_wrapper.c and add tests
+      in tests/http/ghsa-hgf5-96fm-v528-001.phpt,
+      tests/http/ghsa-hgf5-96fm-v528-002.phpt,
+      tests/http/ghsa-hgf5-96fm-v528-003.phpt.
+    - CVE-2025-1736
+  * SECURITY UPDATE: Location truncation
+    - debian/patches/CVE-2025-1861.patch: converts the
+      allocation of location to be on heap instead of stack
+      in ext/standard/http_fopen_wrapper.c and add tests in
+      tests/http/ghsa-52jp-hrpf-2jff-001.phpt,
+      tests/http/ghsa-52jp-hrpf-2jff-002.phpt.
+    - CVE-2025-1861
+  * debian/patches/0001-Fix-GH-16955-Use-empheral-ports-for-OpenSSL-server-c.patch
+    added in order to fix all the tests added in the CVE above.
+
+ -- Leonidas Da Silva Barbosa <leo.barbosa@canonical.com>  Mon, 24 Mar 2025 16:04:23 -0300
+
 php8.1 (8.1.2-1ubuntu2.20) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Buffer over read
