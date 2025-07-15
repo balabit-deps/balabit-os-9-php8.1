@@ -1,3 +1,27 @@
+php8.1 (8.1.2-1ubuntu2.22) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Null byte termination in hostnames
+    - debian/patches/CVE-2025-1220.patch: check hostnames in
+      ext/standard/fsock.c,
+      ext/standard/tests/network/ghsa-3cr5-j632-f35r.phpt,
+      ext/standard/tests/streams/ghsa-3cr5-j632-f35r.phpt,
+      main/streams/xp_socket.c.
+    - CVE-2025-1220
+  * SECURITY UPDATE: pgsql extension does not check for errors during
+    escaping
+    - debian/patches/CVE-2025-1735.patch: add error checks in
+      ext/pdo_pgsql/pgsql_driver.c,
+      ext/pdo_pgsql/tests/ghsa-hrwm-9436-5mv3.phpt,
+      ext/pgsql/pgsql.c, ext/pgsql/tests/ghsa-hrwm-9436-5mv3.phpt.
+    - CVE-2025-1735
+  * SECURITY UPDATE: NULL Pointer Dereference in PHP SOAP Extension via
+    Large XML Namespace Prefix
+    - debian/patches/CVE-2025-6491.patch: handle large names in
+      ext/soap/soap.c, ext/soap/tests/soap_qname_crash.phpt.
+    - CVE-2025-6491
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Tue, 15 Jul 2025 08:11:22 -0400
+
 php8.1 (8.1.2-1ubuntu2.21) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Use after free

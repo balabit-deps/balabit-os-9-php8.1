@@ -91,3 +91,6 @@ CVE-2025-1734.patch
 CVE-2025-1736.patch
 CVE-2025-1861.patch
 0001-Fix-GH-16955-Use-empheral-ports-for-OpenSSL-server-c.patch
+CVE-2025-1220.patch
+CVE-2025-1735.patch
+CVE-2025-6491.patch
