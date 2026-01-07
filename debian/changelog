@@ -1,3 +1,16 @@
+php8.1 (8.1.2-1ubuntu2.23) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Heap buffer overflow in array_merge()
+    - debian/patches/CVE-2025-14178.patch: check number of elements in
+      ext/standard/array.c
+    - CVE-2025-14178
+  * SECURITY UPDATE: NULL pointer dereference in PDO quoting
+    - debian/patches/CVE-2025-14180.patch: fix null pointer dereference in
+      ext/pdo/pdo_sql_parser.re
+    - CVE-2025-14180
+
+ -- Nishit Majithia <nishit.majithia@canonical.com>  Wed, 07 Jan 2026 14:07:41 +0530
+
 php8.1 (8.1.2-1ubuntu2.22) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Null byte termination in hostnames
