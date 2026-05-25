@@ -1,3 +1,52 @@
+php8.1 (8.1.2-1ubuntu2.24) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: SQL injection in PDO Firebird driver
+    - debian/patches/CVE-2025-14179.patch: GHSA-w476-322c-wpvm: [pdo_firebird]
+      Fix SQL injection via NUL bytes in quoted strings in
+      ext/pdo_firebird/firebird_driver.c,
+      ext/pdo_firebird/tests/ghsa-w476-322c-wpvm.phpt.
+    - CVE-2025-14179
+  * SECURITY UPDATE: use-after-free in SOAP extension
+    - debian/patches/CVE-2026-6722.patch: GHSA-85c2-q967-79q5: [soap] Fix stale
+      SOAP_GLOBAL(ref_map) pointer with Apache Map in ext/soap/php_encoding.c,
+      ext/soap/tests/GHSA-85c2-q967-79q5.phpt.
+    - CVE-2026-6722
+  * SECURITY UPDATE: XSS via incorrect sanitizationc
+    - debian/patches/CVE-2026-6735-pre1.patch: Expose JSON internal function
+      to escape string in ext/json/json.c, ext/json/json_encoder.c,
+      ext/json/php_json.h, ext/json/php_json_encoder.h.
+    - debian/patches/CVE-2026-6735-pre2.patch: Fix bug #64539: FPM status -
+      query_string not properly JSON encoded in sapi/fpm/fpm/fpm_status.c,
+      sapi/fpm/tests/bug64539-status-json-encoding.phpt,
+      sapi/fpm/tests/response.inc, sapi/fpm/tests/tester.inc.
+    - debian/patches/CVE-2026-6735.patch: GHSA-7qg2-v9fj-4mwv: [fpm] XSS within
+      status endpoint in sapi/fpm/fpm/fpm_status.c,
+      sapi/fpm/tests/ghsa-7qg2-v9fj-4mwv-status-xss.phpt.
+    - CVE-2026-6735
+  * SECURITY UPDATE: null pointer dereference via encoding lists mismatch
+    - debian/patches/CVE-2026-7259.patch: GHSA-wm6j-2649-pv75: [mbstring] Fix
+      null pointer dereference in php_mb_check_encoding() via
+      mb_ereg_search_init() in Zend/tests/GHSA-wm6j-2649-pv75.phpt,
+      ext/mbstring/php_mbregex.c.
+    - CVE-2026-7259
+  * SECURITY UPDATE: use-after-free in SOAP persistance handling
+    - debian/patches/CVE-2026-7261.patch: GHSA-m33r-qmcv-p97q: [soap] Fix use-
+      after-free after header parsing failure with SOAP_PERSISTENCE_SESSION in
+      ext/soap/soap.c, ext/soap/tests/GHSA-m33r-qmcv-p97q.phpt.
+    - CVE-2026-7261
+  * SECURITY UPDATE: null pointer dereference in SOAP decoding process
+    - debian/patches/CVE-2026-7262.patch: GHSA-hmxp-6pc4-f3vv: [soap] Fix broken
+      Apache map value NULL check in ext/soap/php_encoding.c,
+      ext/soap/tests/GHSA-hmxp-6pc4-f3vv.phpt.
+    - CVE-2026-7262
+  * SECURITY UPDATE: integer overflow in metaphone
+    - debian/patches/CVE-2026-7568.patch: GHSA-96wq-48vp-hh57: [metaphone] Fix
+      signed integer overflow of char array offset in ext/standard/metaphone.c,
+      ext/standard/tests/GHSA-96wq-48vp-hh57.phpt.
+    - CVE-2026-7568
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Mon, 25 May 2026 11:08:06 -0400
+
 php8.1 (8.1.2-1ubuntu2.23) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Heap buffer overflow in array_merge()
