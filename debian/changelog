@@ -1,3 +1,13 @@
+php8.1 (8.1.2-1ubuntu2.25) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Memory corruption in openssl_encrypt with AES-WRAP-PAD
+    - debian/patches/CVE-2026-14355.patch: ext/openssl: openssl_encrypt() zend
+      mm heap overflow on AES-WRAP-PAD mode. in ext/openssl/openssl.c,
+      ext/openssl/tests/gh22186.phpt.
+    - CVE-2026-14355
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Thu, 16 Jul 2026 14:32:33 -0400
+
 php8.1 (8.1.2-1ubuntu2.24) jammy-security; urgency=medium
 
   * SECURITY UPDATE: SQL injection in PDO Firebird driver
