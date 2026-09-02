@@ -1,3 +1,21 @@
+php8.1 (8.1.2-1ubuntu2.26) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: SQL injection via improper escaping of backslashes
+    - debian/patches/CVE-2026-17543.patch: Fix SQL injection in ext-pgsql via
+      E'...' backslash breakout in ext/pgsql/pgsql.c,
+      ext/pgsql/tests/10pg_convert_9.phpt,
+      ext/pgsql/tests/10pg_convert_json_array.phpt,
+      ext/pgsql/tests/12pg_insert_9.phpt, ext/pgsql/tests/14pg_update_9.phpt,
+      ext/pgsql/tests/GHSA-7qpv-r5mr-78m4.phpt, ext/pgsql/tests/bug64609.phpt,
+      ext/pgsql/tests/bug68638.phpt.
+    - CVE-2026-17543
+  * SECURITY UPDATE: DoS via circular symbolic links in phar archives
+    - debian/patches/CVE-2026-7260.patch: Fix GHSA-vc5h-9ppw-p5f3: phar circular
+      symlink crash in ext/phar/util.c.
+    - CVE-2026-7260
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Wed, 02 Sep 2026 08:42:10 -0400
+
 php8.1 (8.1.2-1ubuntu2.25) jammy-security; urgency=medium
 
   * SECURITY UPDATE: Memory corruption in openssl_encrypt with AES-WRAP-PAD
