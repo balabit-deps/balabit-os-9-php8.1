@@ -1,3 +1,132 @@
+php8.1 (8.1.2-1ubuntu2.28) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: Remote RCE via state corruption issue
+    - debian/patches/CVE-2026-109618_109619.patch: Avoid state corruption via
+      bailout in Zend/zend_API.h, Zend/zend_alloc.c, Zend/zend_alloc.h,
+      Zend/zend_execute_API.c, Zend/zend_hash.c, Zend/zend_hash.h,
+      Zend/zend_multiply.h, Zend/zend_strtod.c, Zend/zend_types.h,
+      Zend/zend_vm_def.h, Zend/zend_vm_execute.h, ext/opcache/ZendAccelerator.c,
+      ext/opcache/ZendAccelerator.h, ext/opcache/zend_file_cache.c,
+      ext/opcache/zend_persist.c, ext/session/session.c,
+      ext/zend_test/tests/observer_bug81430_2.phpt,
+      ext/zend_test/tests/observer_bug81435.phpt,
+      ext/zend_test/tests/observer_error_01.phpt, main/SAPI.c, main/main.c,
+      main/php_variables.c, main/rfc1867.c.
+    - CVE-2026-109618
+    - CVE-2026-109619
+
+ -- Marc Deslauriers <marc.deslauriers@ubuntu.com>  Mon, 19 Oct 2026 14:54:45 -0400
+
+php8.1 (8.1.2-1ubuntu2.27) jammy-security; urgency=medium
+
+  * SECURITY UPDATE: heap buffer over-read in stream filter line-break-chars option
+    - debian/patches/CVE-2026-92842.patch: Fix heap-buffer-overflow in convert
+      stream filters with NUL in line-break-chars in ext/standard/filters.c,
+      ext/standard/tests/filters/ghsa-88hq-2827-7pg6.phpt.
+    - CVE-2026-92842
+  * SECURITY UPDATE: FastCGI allowed_clients only matched /96 prefix of IPv6 addresses
+    - debian/patches/CVE-2026-91768.patch: Fix GHSA-62xp-839h-2637: FastCGI
+      allowed_clients compared only 96 bits of IPv6 addresses in main/fastcgi.c,
+      sapi/fpm/tests/ghsa-62xp-839h-2637-ipv6-allowed-clients.phpt,
+      sapi/fpm/tests/ghsa-62xp-839h-2637-v4mapped-allowed-clients.phpt.
+    - CVE-2026-91768
+  * SECURITY UPDATE: OpenSSL peer verification incorrectly fell back to CN
+    - debian/patches/CVE-2026-91769.patch: Fix GHSA-vvx9-73fr-5jjx: do not fall
+      back to CN if the cert has a service ID in
+      ext/openssl/tests/san_absent_cn_fallback.phpt,
+      ext/openssl/tests/san_no_cn_fallback.phpt,
+      ext/openssl/tests/san_peer_matching.phpt,
+      ext/openssl/tests/san_srv_no_cn_fallback.phpt,
+      ext/openssl/tests/san_uri_no_cn_fallback.phpt, ext/openssl/xp_ssl.c.
+    - CVE-2026-91769
+  * SECURITY UPDATE: OOB read in wildcard certificate name matching
+    - debian/patches/CVE-2026-91767.patch: Fix GHSA-xr7j-rvgx-xq5p: OOB read in
+      php_openssl_matches_wildcard_name() in ext/openssl/tests/GHSA-xr7j-rvgx-
+      xq5p.phpt, ext/openssl/xp_ssl.c.
+    - CVE-2026-91767
+  * SECURITY UPDATE: mysqlnd wire protocol parser OOB reads on truncated packets
+    - debian/patches/CVE-2025-1218-pre.patch: Fix MySQLnd possible buffer over
+      read in auth_protocol in ext/mysqlnd/mysqlnd_wireprotocol.c.
+    - debian/patches/CVE-2025-1218.patch: Fix GHSA-r6x9-5r99-36j7: Various
+      packet overreads in mysqlnd wireprotocol in
+      ext/mysqli/tests/fake_server.inc,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-packet-affected-
+      rows-2-bytes.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-packet-
+      affected-rows-8-bytes.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-
+      packet-affected-rows-null-length.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-packet-affected-rows.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-packet-last-insert-id-no-
+      space.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-packet-last-insert-
+      id.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-packet-warning-
+      count.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-auth-switch-
+      unterminated.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-cached-
+      sha2-empty.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-cached-sha2-fast-
+      auth.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-cached-sha2-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-cached-sha2-switch-unterminated.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-chg-user-empty.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-chg-user-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-chg-user-switch-unterminated.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-eof-warning-count.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-greet-packet-string.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-greet-packet.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-greet-scramble-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-ok-packet-affected-rows.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-ok-packet-last-insert-id.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-ok-packet-message-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-ok-packet-warning-count.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-query-row-eof-short.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-query-row-field-len-2-bytes.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-query-row-field-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-query-row-field-null.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-rset-header-field-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-rset-header-upsert-affected-
+      rows.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-rset-header-upsert-
+      len.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-sha256-pk-empty.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-sha256-pk-len.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-stmt-response-field-len-faulty.phpt,
+      ext/mysqli/tests/ghsa-r6x9-5r99-36j7-stmt-response-field-len-
+      premature.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-stmt-response-row-
+      status.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-stmt-row-short-length-
+      date.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-stmt-row-short-length-
+      datetime.phpt, ext/mysqli/tests/ghsa-r6x9-5r99-36j7-stmt-row-short-length-
+      time.phpt, ext/mysqlnd/mysqlnd_ps.c, ext/mysqlnd/mysqlnd_ps_codec.c,
+      ext/mysqlnd/mysqlnd_wireprotocol.c, ext/mysqlnd/mysqlnd_wireprotocol.h.
+    - CVE-2025-1218
+  * SECURITY UPDATE: HTTP stream wrapper leaks credentials to cross-origin redirects
+    - debian/patches/CVE-2026-91766.patch: Fix GHSA-fpwc-w8rq-cr92: strip
+      credentials from user headers on cross-origin redirects in
+      ext/standard/http_fopen_wrapper.c, ext/standard/tests/http/bug61548.phpt,
+      ext/standard/tests/http/ghsa-fpwc-w8rq-cr92.phpt.
+    - CVE-2026-91766
+  * SECURITY UPDATE: unbounded recursion in SOAP XML parser allows remote DoS
+    - debian/patches/CVE-2026-91765.patch: Fix GHSA-rgrp-mwpx-f6rm: unbounded
+      recursion in ext/soap XML parsing and decoding in ext/soap/php_encoding.c,
+      ext/soap/php_soap.h, ext/soap/php_xml.c, ext/soap/soap.c,
+      ext/soap/tests/GHSA-rgrp-mwpx-f6rm-href-chain.phpt, ext/soap/tests/GHSA-
+      rgrp-mwpx-f6rm-href-cycle.phpt, ext/soap/tests/GHSA-rgrp-mwpx-f6rm.phpt.
+    - CVE-2026-91765
+  * SECURITY UPDATE: heap buffer overflow in SOAP HTTP client response buffer
+    - debian/patches/CVE-2025-14181.patch: Fix GHSA-cj93-vc83-wgqv in
+      ext/soap/php_http.c, ext/soap/tests/bugs/GHSA-cj93-vc83-wgqv.phpt.
+    - CVE-2025-14181
+  * SECURITY UPDATE: integer overflow in phar TAR size field allows entry injection
+    - debian/patches/CVE-2026-6103.patch: Fix GHSA-j3wh-g957-2m85: phar tar
+      entry injection in ext/phar/phar_internal.h, ext/phar/tar.c,
+      ext/phar/tests/tar/GHSA-j3wh-g957-2m85-longlink.phpt,
+      ext/phar/tests/tar/GHSA-j3wh-g957-2m85-size.phpt,
+      ext/phar/tests/tar/GHSA-j3wh-g957-2m85-typeflag.phpt.
+    - CVE-2026-6103
+  * SECURITY UPDATE: OOB read in HTTP stream wrapper
+    - debian/patches/CVE-2026-93682-1.patch: [http] Fix out-of-bounds read on
+      empty Location header in ext/standard/http_fopen_wrapper.c,
+      ext/standard/tests/http/http_empty_location_redirect.phpt.
+    - debian/patches/CVE-2026-93682-2.patch: ext/standard: Fix 1-char relative
+      Location redirects after GH-23467 in ext/standard/http_fopen_wrapper.c,
+      ext/standard/tests/http/http_single_char_location_redirect.phpt.
+    - CVE-2026-93682
+
+ -- Isabel Garcia Contreras <isabel.garcia@canonical.com>  Thu, 13 Oct 2026 14:55:46 -0400
+
 php8.1 (8.1.2-1ubuntu2.26) jammy-security; urgency=medium
 
   * SECURITY UPDATE: SQL injection via improper escaping of backslashes
